@@ -3,23 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pedal Drill · Audio Generator</title>
+<title>Pedal Drill · Automatic</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;600;800&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #0d0f14;
-    --surface: #13161f;
-    --border: #1e2230;
-    --clutch: #38bdf8;
+    --bg: #0f0f0a;
+    --surface: #1a1a12;
+    --border: #2a2a1a;
     --brake: #f87171;
-    --gas: #4ade80;
-    --combo: #fbbf24;
-    --text: #e2e8f0;
-    --muted: #4a5568;
-    --dim: #1e2230;
+    --accel: #facc15;
+    --text: #e2e8d0;
+    --muted: #4a5040;
+    --gas: #facc15;
   }
 
   body {
@@ -34,17 +32,13 @@
     overflow-x: hidden;
   }
 
-  /* Scanline overlay */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
     background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.07) 2px,
-      rgba(0,0,0,0.07) 4px
+      0deg, transparent, transparent 2px,
+      rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px
     );
     pointer-events: none;
     z-index: 100;
@@ -65,16 +59,12 @@
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 2px;
-    background: linear-gradient(90deg, var(--clutch), var(--brake), var(--gas));
+    background: linear-gradient(90deg, var(--brake), var(--accel));
   }
 
-  .header {
-    text-align: center;
-    margin-bottom: 36px;
-  }
+  .header { text-align: center; margin-bottom: 36px; }
 
   .eyebrow {
-    font-family: 'Share Tech Mono', monospace;
     font-size: 10px;
     letter-spacing: 5px;
     color: var(--muted);
@@ -90,7 +80,7 @@
     color: #fff;
   }
 
-  h1 span { color: var(--gas); }
+  h1 span { color: var(--accel); }
 
   .section-label {
     font-size: 9px;
@@ -100,7 +90,6 @@
     display: block;
   }
 
-  /* Controls grid */
   .controls {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -108,15 +97,8 @@
     margin-bottom: 24px;
   }
 
-  .control-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
+  .control-group { display: flex; flex-direction: column; gap: 8px; }
   .control-group.full { grid-column: 1 / -1; }
-
-  label.section-label { cursor: default; }
 
   input[type=range] {
     -webkit-appearance: none;
@@ -124,69 +106,44 @@
     height: 2px;
     background: var(--border);
     outline: none;
-    border-radius: 0;
   }
 
   input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 14px;
-    height: 14px;
+    width: 14px; height: 14px;
     background: #fff;
     border-radius: 50%;
     cursor: pointer;
   }
 
-  .range-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+  .range-row { display: flex; align-items: center; gap: 12px; }
+  .range-val { font-size: 13px; color: #fff; min-width: 38px; text-align: right; }
 
-  .range-val {
-    font-size: 13px;
-    color: #fff;
-    min-width: 38px;
-    text-align: right;
-  }
-
-  /* Checkboxes */
-  .check-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
+  .check-group { display: flex; flex-direction: column; gap: 8px; }
 
   .check-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    user-select: none;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; user-select: none;
   }
 
   .check-item input { display: none; }
 
   .check-box {
-    width: 16px;
-    height: 16px;
+    width: 16px; height: 16px;
     border: 1px solid var(--muted);
     border-radius: 2px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s;
   }
 
   .check-item input:checked + .check-box {
-    border-color: var(--gas);
-    background: var(--gas);
+    border-color: var(--accel);
+    background: var(--accel);
   }
 
   .check-box::after {
     content: '';
-    width: 8px;
-    height: 5px;
+    width: 8px; height: 5px;
     border-left: 2px solid #000;
     border-bottom: 2px solid #000;
     transform: rotate(-45deg) translateY(-1px);
@@ -195,21 +152,14 @@
 
   .check-item input:checked + .check-box::after { display: block; }
 
-  .check-label {
-    font-size: 12px;
-    color: var(--text);
-    letter-spacing: 1px;
-  }
+  .check-label { font-size: 12px; color: var(--text); letter-spacing: 1px; }
 
   .check-dot {
-    width: 8px;
-    height: 8px;
+    width: 8px; height: 8px;
     border-radius: 50%;
-    display: inline-block;
-    margin-right: 4px;
+    display: inline-block; margin-right: 4px;
   }
 
-  /* Sequence preview */
   .preview-box {
     background: var(--bg);
     border: 1px solid var(--border);
@@ -217,167 +167,85 @@
     padding: 14px 16px;
     margin-bottom: 24px;
     min-height: 52px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
   }
 
   .preview-tag {
-    font-size: 10px;
-    letter-spacing: 2px;
-    padding: 3px 8px;
-    border-radius: 2px;
-    border: 1px solid;
+    font-size: 10px; letter-spacing: 2px;
+    padding: 3px 8px; border-radius: 2px; border: 1px solid;
   }
 
-  .tag-CLUTCH { color: var(--clutch); border-color: var(--clutch); background: rgba(56,189,248,0.07); }
   .tag-BRAKE  { color: var(--brake);  border-color: var(--brake);  background: rgba(248,113,113,0.07); }
-  .tag-GAS    { color: var(--gas);    border-color: var(--gas);    background: rgba(74,222,128,0.07); }
-  .tag-COMBO  { color: var(--combo);  border-color: var(--combo);  background: rgba(251,191,36,0.07); }
+  .tag-ACCEL  { color: var(--accel);  border-color: var(--accel);  background: rgba(250,204,21,0.07); }
 
-  .preview-more {
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 1px;
-  }
+  .preview-more { font-size: 10px; color: var(--muted); letter-spacing: 1px; }
 
-  /* Divider */
-  .divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 24px 0;
-  }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 
-  /* Buttons */
-  .btn-row {
-    display: flex;
-    gap: 12px;
-  }
+  .btn-row { display: flex; gap: 12px; }
 
   .btn {
-    flex: 1;
-    padding: 14px 20px;
+    flex: 1; padding: 14px 20px;
     font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 3px;
-    border-radius: 2px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.15s;
-    position: relative;
-    overflow: hidden;
+    font-size: 11px; letter-spacing: 3px;
+    border-radius: 2px; border: none;
+    cursor: pointer; transition: all 0.15s;
   }
 
-  .btn-primary {
-    background: #fff;
-    color: #000;
-  }
-
+  .btn-primary { background: #fff; color: #000; }
   .btn-primary:hover { background: #e2e8f0; }
-  .btn-primary:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
 
   .btn-secondary {
-    background: transparent;
-    color: var(--muted);
+    background: transparent; color: var(--muted);
     border: 1px solid var(--border);
   }
-
   .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
 
-  /* Progress */
-  .progress-wrap {
-    margin-top: 20px;
-    display: none;
-  }
-
+  .progress-wrap { margin-top: 20px; display: none; }
   .progress-wrap.visible { display: block; }
 
   .progress-bar-bg {
-    height: 2px;
-    background: var(--border);
-    border-radius: 0;
-    overflow: hidden;
-    margin-bottom: 10px;
+    height: 2px; background: var(--border);
+    overflow: hidden; margin-bottom: 10px;
   }
 
   .progress-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--clutch), var(--gas));
-    width: 0%;
-    transition: width 0.2s;
+    background: linear-gradient(90deg, var(--brake), var(--accel));
+    width: 0%; transition: width 0.2s;
   }
 
   .progress-label {
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 2px;
-    text-align: center;
+    font-size: 10px; color: var(--muted);
+    letter-spacing: 2px; text-align: center;
   }
 
-  /* Download link */
-  .download-wrap {
-    margin-top: 16px;
-    display: none;
-    text-align: center;
-  }
-
-  .download-wrap.visible { display: block; }
-
-  .download-btn {
-    display: inline-block;
-    padding: 12px 32px;
-    background: transparent;
-    border: 1px solid var(--gas);
-    color: var(--gas);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 3px;
-    border-radius: 2px;
-    text-decoration: none;
-    transition: all 0.15s;
-  }
-
-  .download-btn:hover {
-    background: rgba(74,222,128,0.1);
-  }
-
-  .file-info {
-    margin-top: 8px;
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 1px;
-  }
-
-  /* Foot guide */
   .foot-guide {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 28px;
-    padding-top: 20px;
+    display: flex; justify-content: center; gap: 60px;
+    margin-top: 28px; padding-top: 20px;
     border-top: 1px solid var(--border);
   }
 
   .foot-col { text-align: center; }
+  .foot-label { font-size: 8px; letter-spacing: 3px; color: var(--muted); margin-bottom: 8px; }
+  .foot-pedal { font-size: 10px; letter-spacing: 2px; margin: 4px 0; }
 
-  .foot-label {
-    font-size: 8px;
-    letter-spacing: 3px;
+  .note {
+    margin-top: 16px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    font-size: 9px;
     color: var(--muted);
-    margin-bottom: 8px;
-  }
-
-  .foot-pedal {
-    font-size: 10px;
-    letter-spacing: 2px;
-    margin: 4px 0;
+    letter-spacing: 1px;
+    line-height: 1.6;
   }
 </style>
 </head>
 <body>
 <div class="card">
   <div class="header">
-    <div class="eyebrow">MANUAL TRANSMISSION TRAINER</div>
+    <div class="eyebrow">AUTOMATIC TRANSMISSION TRAINER</div>
     <h1>PEDAL <span>AUDIO</span> DRILL</h1>
   </div>
 
@@ -387,24 +255,14 @@
       <label class="section-label">INCLUDE PEDALS</label>
       <div class="check-group">
         <label class="check-item">
-          <input type="checkbox" id="chk-clutch" checked>
-          <span class="check-box"></span>
-          <span class="check-label"><span class="check-dot" style="background:var(--clutch)"></span>CLUTCH</span>
-        </label>
-        <label class="check-item">
           <input type="checkbox" id="chk-brake" checked>
           <span class="check-box"></span>
           <span class="check-label"><span class="check-dot" style="background:var(--brake)"></span>BRAKE</span>
         </label>
         <label class="check-item">
-          <input type="checkbox" id="chk-gas" checked>
+          <input type="checkbox" id="chk-accel" checked>
           <span class="check-box"></span>
-          <span class="check-label"><span class="check-dot" style="background:var(--gas)"></span>ACCELERATOR</span>
-        </label>
-        <label class="check-item">
-          <input type="checkbox" id="chk-combos">
-          <span class="check-box"></span>
-          <span class="check-label"><span class="check-dot" style="background:var(--combo)"></span>COMBOS</span>
+          <span class="check-label"><span class="check-dot" style="background:var(--accel)"></span>ACCELERATOR</span>
         </label>
       </div>
     </div>
@@ -421,8 +279,8 @@
 
       <label class="section-label" style="margin-top:8px">PAUSE (SEC)</label>
       <div class="range-row">
-        <input type="range" id="rng-pause" min="0.1" max="5" value="5" step="0.1">
-        <span class="range-val" id="val-pause">5s</span>
+        <input type="range" id="rng-pause" min="0.1" max="5" value="1" step="0.1">
+        <span class="range-val" id="val-pause">1s</span>
       </div>
 
       <label class="section-label" style="margin-top:8px">VOICE SPEED</label>
@@ -432,7 +290,7 @@
       </div>
     </div>
 
-    <!-- Intro/outro -->
+    <!-- Options -->
     <div class="control-group full">
       <label class="section-label">OPTIONS</label>
       <div class="check-group" style="flex-direction:row; flex-wrap:wrap; gap:16px">
@@ -441,7 +299,7 @@
           <span class="check-box"></span>
           <span class="check-label">COUNTDOWN INTRO</span>
         </label>
-<label class="check-item">
+        <label class="check-item">
           <input type="checkbox" id="chk-outro" checked>
           <span class="check-box"></span>
           <span class="check-label">END MESSAGE</span>
@@ -465,38 +323,30 @@
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" id="progress-bar"></div>
     </div>
-    <div class="progress-label" id="progress-label">SYNTHESIZING...</div>
+    <div class="progress-label" id="progress-label"></div>
   </div>
 
   <div class="foot-guide">
     <div class="foot-col">
-      <div class="foot-label">LEFT FOOT</div>
-      <div class="foot-pedal" style="color:var(--clutch)">CLUTCH</div>
-    </div>
-    <div class="foot-col">
-      <div class="foot-label">RIGHT FOOT</div>
+      <div class="foot-label">RIGHT FOOT ONLY</div>
       <div class="foot-pedal" style="color:var(--brake)">BRAKE</div>
-      <div class="foot-pedal" style="color:var(--gas)">ACCELERATOR</div>
+      <div class="foot-pedal" style="color:var(--accel)">ACCELERATOR</div>
     </div>
+  </div>
+
+  <div class="note">
+    ⚠ AUTOMATIC: Use RIGHT FOOT ONLY for both pedals. Never use left foot on brake.
   </div>
 </div>
 
 <script>
-// ── State ──────────────────────────────────────────────────────────────
 let sequence = [];
-
-const COMBOS = [
-  "CLUTCH AND BRAKE",
-  "CLUTCH AND ACCELERATOR",
-];
 
 function getPool() {
   const pool = [];
-  if (document.getElementById('chk-clutch').checked) pool.push('CLUTCH');
-  if (document.getElementById('chk-brake').checked)  pool.push('BRAKE');
-  if (document.getElementById('chk-gas').checked)    pool.push('ACCELERATOR');
-  if (document.getElementById('chk-combos').checked) pool.push(...COMBOS);
-  return pool.length ? pool : ['CLUTCH', 'BRAKE', 'GAS'];
+  if (document.getElementById('chk-brake').checked) pool.push('BRAKE');
+  if (document.getElementById('chk-accel').checked) pool.push('ACCELERATOR');
+  return pool.length ? pool : ['BRAKE', 'ACCELERATOR'];
 }
 
 function buildSequence() {
@@ -514,10 +364,7 @@ function buildSequence() {
 }
 
 function tagClass(cmd) {
-  if (cmd === 'CLUTCH') return 'tag-CLUTCH';
-  if (cmd === 'BRAKE')  return 'tag-BRAKE';
-  if (cmd === 'ACCELERATOR') return 'tag-GAS';
-  return 'tag-COMBO';
+  return cmd === 'BRAKE' ? 'tag-BRAKE' : 'tag-ACCEL';
 }
 
 function renderPreview() {
@@ -543,24 +390,22 @@ function regeneratePreview() {
   renderPreview();
 }
 
-// ── Range inputs ───────────────────────────────────────────────────────
 document.getElementById('rng-count').addEventListener('input', e => {
   document.getElementById('val-count').textContent = e.target.value;
   regeneratePreview();
 });
 document.getElementById('rng-pause').addEventListener('input', e => {
-  document.getElementById('val-pause').textContent = e.target.value + 's';
+  document.getElementById('val-pause').textContent = parseFloat(e.target.value).toFixed(1) + 's';
 });
 document.getElementById('rng-speed').addEventListener('input', e => {
-  document.getElementById('val-speed').textContent = parseFloat(e.target.value).toFixed(1) + '×';
+  document.getElementById('val-speed').textContent = parseFloat(e.target.value).toFixed(2) + '×';
 });
 
-['chk-clutch','chk-brake','chk-gas','chk-combos'].forEach(id => {
+['chk-brake','chk-accel'].forEach(id => {
   document.getElementById(id).addEventListener('change', regeneratePreview);
 });
 
-// ── Live playback via speechSynthesis with exact timed gaps ──────────────
-
+// ── Live playback ──────────────────────────────────────────────────────
 let drillRunning = false;
 let drillTimeouts = [];
 
@@ -597,6 +442,7 @@ async function generateAudio() {
     btn.textContent = 'START DRILL';
     btn.style.background = '#fff';
     btn.style.color = '#000';
+    btn.style.border = 'none';
     document.getElementById('progress-wrap').classList.remove('visible');
     return;
   }
@@ -618,7 +464,6 @@ async function generateAudio() {
   const withIntro = document.getElementById('chk-intro').checked;
   const withOutro = document.getElementById('chk-outro').checked;
 
-  // Build script
   const script = [];
   if (withIntro) {
     script.push({ text: 'Pedal drill starting in... 3', pause: 1000 });
@@ -636,7 +481,6 @@ async function generateAudio() {
     if (!drillRunning) break;
     const { text, pause } = script[i];
 
-    // Update progress only for actual commands
     const isCmd = sequence.includes(text);
     if (isCmd) {
       cmdCount++;
@@ -663,7 +507,6 @@ async function generateAudio() {
   btn.style.border = 'none';
 }
 
-// ── Init ───────────────────────────────────────────────────────────────
 regeneratePreview();
 </script>
 </body>
