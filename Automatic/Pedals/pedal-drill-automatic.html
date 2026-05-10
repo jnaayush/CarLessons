@@ -357,7 +357,8 @@ function buildSequence() {
   for (let i = 0; i < count; i++) {
     let pick;
     do { pick = pool[Math.floor(Math.random() * pool.length)]; } while (pick === last && pool.length > 1);
-    seq.push(pick);
+    const reps = Math.floor(Math.random() * 5) + 1;
+    seq.push({ cmd: pick, reps });
     last = pick;
   }
   return seq;
@@ -370,17 +371,17 @@ function tagClass(cmd) {
 function renderPreview() {
   const box = document.getElementById('preview');
   box.innerHTML = '';
-  const show = sequence.slice(0, 18);
-  show.forEach(cmd => {
+  const show = sequence.slice(0, 12);
+  show.forEach(({ cmd, reps }) => {
     const tag = document.createElement('span');
     tag.className = `preview-tag ${tagClass(cmd)}`;
-    tag.textContent = cmd;
+    tag.textContent = reps > 1 ? `${cmd} x${reps}` : cmd;
     box.appendChild(tag);
   });
-  if (sequence.length > 18) {
+  if (sequence.length > 12) {
     const more = document.createElement('span');
     more.className = 'preview-more';
-    more.textContent = `+${sequence.length - 18} more`;
+    more.textContent = `+${sequence.length - 12} more`;
     box.appendChild(more);
   }
 }
@@ -466,33 +467,45 @@ async function generateAudio() {
 
   const script = [];
   if (withIntro) {
-    script.push({ text: 'Pedal drill starting in... 3', pause: 1000 });
-    script.push({ text: '2', pause: 1000 });
-    script.push({ text: '1', pause: 1000 });
-    script.push({ text: 'Go', pause: 500 });
+    script.push({ text: 'Pedal drill starting in... 3', pause: 1000, isCmd: false });
+    script.push({ text: '2', pause: 1000, isCmd: false });
+    script.push({ text: '1', pause: 1000, isCmd: false });
+    script.push({ text: 'Go', pause: 500, isCmd: false });
   }
-  sequence.forEach(cmd => script.push({ text: cmd, pause: pauseSec * 1000 }));
-  if (withOutro) script.push({ text: 'Drill complete. Great work!', pause: 0 });
+  const totalCmds = sequence.reduce((s, { reps }) => s + reps, 0);
+  sequence.forEach(({ cmd, reps }) => {
+    for (let r = 0; r < reps; r++) {
+      script.push({ text: cmd, pause: pauseSec * 1000, isCmd: true, reps, repNum: r + 1 });
+    }
+  });
+  if (withOutro) script.push({ text: 'Drill complete. Great work!', pause: 0, isCmd: false });
 
-  const total = sequence.length;
+  const total = totalCmds;
   let cmdCount = 0;
 
   for (let i = 0; i < script.length; i++) {
     if (!drillRunning) break;
     const { text, pause } = script[i];
 
-    const isCmd = sequence.includes(text);
+    const item = script[i];
+    const spokenText = item.text;
+    const pauseMs = item.pause;
+    const isCmd = item.isCmd;
+    const reps = item.reps;
+    const repNum = item.repNum;
+
     if (isCmd) {
       cmdCount++;
       progressBar.style.width = `${Math.round((cmdCount / total) * 100)}%`;
-      progressLabel.textContent = `${text}  ·  ${cmdCount} / ${total}`;
+      const repLabel = reps > 1 ? `  (${repNum}/${reps})` : '';
+      progressLabel.textContent = `${spokenText}${repLabel}  ·  ${cmdCount} / ${total}`;
     } else {
-      progressLabel.textContent = text.toUpperCase();
+      progressLabel.textContent = spokenText.toUpperCase();
     }
 
-    await speak(text, speed);
+    await speak(spokenText, speed);
     if (!drillRunning) break;
-    if (pause > 0) await sleep(pause);
+    if (pauseMs > 0) await sleep(pauseMs);
   }
 
   if (drillRunning) {
