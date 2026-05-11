@@ -507,7 +507,8 @@ function buildSequence() {
   for (let i = 0; i < count; i++) {
     let pick;
     do { pick = pool[Math.floor(Math.random() * pool.length)]; } while (pick === last && pool.length > 1);
-    const reps = Math.floor(Math.random() * 5) + 1;
+    const repsPool = [1,1,1,2,2,2,3,3,3,4,5];
+    const reps = repsPool[Math.floor(Math.random() * repsPool.length)];
     seq.push({ cmd: pick, reps });
     last = pick;
   }
