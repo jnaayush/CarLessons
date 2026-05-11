@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gear Shift Drill</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;600;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0a0f;
+    --surface: #141019;
+    --border: #241e2e;
+    --clutch: #a78bfa;
+    --gear: #f0abfc;
+    --text: #ede8f0;
+    --muted: #4a4058;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 520px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 36px 32px;
+    position: relative;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--clutch), var(--gear));
+  }
+
+  .header { text-align: center; margin-bottom: 36px; }
+  .eyebrow { font-size: 10px; letter-spacing: 5px; color: var(--muted); margin-bottom: 8px; }
+
+  h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 42px; font-weight: 800;
+    letter-spacing: 2px; line-height: 1; color: #fff;
+  }
+
+  h1 span { color: var(--gear); }
+
+  .section-label { font-size: 9px; letter-spacing: 4px; color: var(--muted); margin-bottom: 12px; display: block; }
+
+  .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .control-group { display: flex; flex-direction: column; gap: 8px; }
+  .control-group.full { grid-column: 1 / -1; }
+
+  input[type=range] { -webkit-appearance: none; width: 100%; height: 2px; background: var(--border); outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: #fff; border-radius: 50%; cursor: pointer; }
+
+  .range-row { display: flex; align-items: center; gap: 12px; }
+  .range-val { font-size: 13px; color: #fff; min-width: 44px; text-align: right; }
+
+  .check-group { display: flex; flex-direction: column; gap: 8px; }
+  .check-item { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+  .check-item input { display: none; }
+
+  .check-box {
+    width: 16px; height: 16px;
+    border: 1px solid var(--muted); border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s;
+  }
+
+  .check-item input:checked + .check-box { border-color: var(--gear); background: var(--gear); }
+
+  .check-box::after {
+    content: ''; width: 8px; height: 5px;
+    border-left: 2px solid #000; border-bottom: 2px solid #000;
+    transform: rotate(-45deg) translateY(-1px); display: none;
+  }
+
+  .check-item input:checked + .check-box::after { display: block; }
+  .check-label { font-size: 12px; color: var(--text); letter-spacing: 1px; }
+
+  /* Gear selector */
+  .gear-grid {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .gear-btn {
+    width: 44px; height: 44px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .gear-btn.active {
+    border-color: var(--gear);
+    color: var(--gear);
+    background: rgba(240,171,252,0.08);
+  }
+
+  /* Preview box */
+  .preview-box {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 2px;
+    padding: 14px 16px; margin-bottom: 24px; min-height: 72px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .preview-sequence {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  }
+
+  .preview-tag {
+    font-size: 9px; letter-spacing: 1px;
+    padding: 3px 8px; border-radius: 2px; border: 1px solid;
+  }
+
+  .tag-clutch-in  { color: var(--clutch); border-color: var(--clutch); background: rgba(167,139,250,0.07); }
+  .tag-gear       { color: var(--gear);   border-color: var(--gear);   background: rgba(240,171,252,0.07); }
+  .tag-clutch-out { color: #818cf8;       border-color: #818cf8;       background: rgba(129,140,248,0.07); }
+
+  .preview-more { font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  .btn-row { display: flex; gap: 12px; }
+
+  .btn {
+    flex: 1; padding: 14px 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; letter-spacing: 3px;
+    border-radius: 2px; border: none;
+    cursor: pointer; transition: all 0.15s;
+  }
+
+  .btn-primary { background: #fff; color: #000; }
+  .btn-primary:hover { background: #e2e8f0; }
+  .btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
+
+  .progress-wrap { margin-top: 20px; display: none; }
+  .progress-wrap.visible { display: block; }
+
+  .progress-bar-bg { height: 2px; background: var(--border); overflow: hidden; margin-bottom: 10px; }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--clutch), var(--gear));
+    width: 0%; transition: width 0.2s;
+  }
+
+  .progress-label { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-align: center; }
+
+  /* Gear diagram */
+  .gear-diagram {
+    margin-top: 28px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: center;
+  }
+
+  .shift-pattern {
+    display: grid;
+    grid-template-columns: repeat(3, 40px);
+    grid-template-rows: repeat(3, 32px);
+    gap: 0;
+    position: relative;
+  }
+
+  .shift-pattern::before {
+    content: '';
+    position: absolute;
+    left: 50%; top: 0; bottom: 0;
+    width: 1px; background: var(--border);
+    transform: translateX(-50%);
+  }
+
+  .shift-pattern::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 0; right: 0;
+    height: 1px; background: var(--border);
+  }
+
+  .gear-pos {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; letter-spacing: 2px;
+    color: var(--muted); position: relative; z-index: 1;
+  }
+
+  .lang-toggle {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    width: fit-content;
+    margin: 0 auto 28px;
+  }
+
+  .lang-btn {
+    padding: 6px 18px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    background: transparent;
+    color: var(--muted);
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .lang-btn.active {
+    background: var(--gear);
+    color: #000;
+  }
+
+  .gear-pos.highlight { color: var(--gear); font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div class="eyebrow">MANUAL TRANSMISSION TRAINER</div>
+    <h1>GEAR <span>SHIFT</span> DRILL</h1>
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="lang-en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" id="lang-hi" onclick="setLang('hi')">हिंदी</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <!-- Gears -->
+    <div class="control-group">
+      <label class="section-label">INCLUDE GEARS</label>
+      <div class="gear-grid" id="gear-grid">
+        <button class="gear-btn active" data-gear="1">1st</button>
+        <button class="gear-btn active" data-gear="2">2nd</button>
+        <button class="gear-btn active" data-gear="3">3rd</button>
+        <button class="gear-btn active" data-gear="4">4th</button>
+        <button class="gear-btn active" data-gear="5">5th</button>
+        <button class="gear-btn" data-gear="6">6th</button>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="control-group">
+      <label class="section-label">SETTINGS</label>
+
+      <label class="section-label" style="margin-top:4px">SHIFTS</label>
+      <div class="range-row">
+        <input type="range" id="rng-count" min="5" max="30" value="10" step="1">
+        <span class="range-val" id="val-count">10</span>
+      </div>
+
+      <label class="section-label" style="margin-top:8px">STEP PAUSE (SEC)</label>
+      <div class="range-row">
+        <input type="range" id="rng-pause" min="0.5" max="8" value="1" step="0.5">
+        <span class="range-val" id="val-pause">1s</span>
+      </div>
+
+      <label class="section-label" style="margin-top:8px">VOICE SPEED</label>
+      <div class="range-row">
+        <input type="range" id="rng-speed" min="0.5" max="1.3" value="0.85" step="0.05">
+        <span class="range-val" id="val-speed">0.85×</span>
+      </div>
+    </div>
+
+    <!-- Options -->
+    <div class="control-group full">
+      <label class="section-label">OPTIONS</label>
+      <div class="check-group" style="flex-direction:row; flex-wrap:wrap; gap:16px">
+        <label class="check-item">
+          <input type="checkbox" id="chk-intro" checked>
+          <span class="check-box"></span>
+          <span class="check-label">COUNTDOWN INTRO</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" id="chk-outro" checked>
+          <span class="check-box"></span>
+          <span class="check-label">END MESSAGE</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview -->
+  <label class="section-label">SEQUENCE PREVIEW</label>
+  <div class="preview-box">
+    <div class="preview-sequence" id="preview"></div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="regeneratePreview()">SHUFFLE</button>
+    <button class="btn btn-primary" id="btn-generate" onclick="runDrill()">START DRILL</button>
+  </div>
+
+  <div class="progress-wrap" id="progress-wrap">
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-bar"></div>
+    </div>
+    <div class="progress-label" id="progress-label"></div>
+  </div>
+
+  <!-- Gear diagram -->
+  <div class="gear-diagram">
+    <div class="shift-pattern">
+      <div class="gear-pos" id="gp1">1</div>
+      <div class="gear-pos"></div>
+      <div class="gear-pos" id="gp3">3</div>
+      <div class="gear-pos"></div>
+      <div class="gear-pos"></div>
+      <div class="gear-pos"></div>
+      <div class="gear-pos" id="gp2">2</div>
+      <div class="gear-pos"></div>
+      <div class="gear-pos" id="gp4">4</div>
+    </div>
+    &nbsp;&nbsp;&nbsp;
+    <div class="shift-pattern">
+      <div class="gear-pos" id="gp5">5</div>
+      <div class="gear-pos"></div>
+      <div class="gear-pos"></div>
+      <div class="gear-pos"></div>
+      <div class="gear-pos"></div>
+      <div class="gear-pos"></div>
+      <div class="gear-pos" id="gp6">6</div>
+      <div class="gear-pos"></div>
+      <div class="gear-pos"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const GEAR_NAMES = { 1:'1st', 2:'2nd', 3:'3rd', 4:'4th', 5:'5th', 6:'6th' };
+
+const LANG = {
+  en: {
+    clutchIn:  'Clutch in',
+    clutchOut: 'Clutch out',
+    gear: (g) => GEAR_NAMES[g] + ' gear',
+    intro1: 'Gear shift drill starting in 3',
+    intro2: '2', intro3: '1', introGo: 'Go',
+    outro: 'Drill complete. Great work!',
+    starting: 'STARTING IN...',
+    complete: 'DRILL COMPLETE',
+    shiftLabel: (i, total, step) => `SHIFT ${i}/${total}  ·  ${step}`,
+    ui: {
+      eyebrow: 'MANUAL TRANSMISSION TRAINER',
+      includeGears: 'INCLUDE GEARS',
+      settings: 'SETTINGS',
+      shifts: 'SHIFTS',
+      stepPause: 'STEP PAUSE (SEC)',
+      voiceSpeed: 'VOICE SPEED',
+      options: 'OPTIONS',
+      countdownIntro: 'COUNTDOWN INTRO',
+      endMessage: 'END MESSAGE',
+      sequencePreview: 'SEQUENCE PREVIEW',
+      shuffle: 'SHUFFLE',
+      startDrill: 'START DRILL',
+      stopDrill: 'STOP DRILL',
+      clutchInTag: 'CLUTCH IN',
+      clutchOutTag: 'CLUTCH OUT',
+    }
+  },
+  hi: {
+    clutchIn:  'क्लच दबाओ',
+    clutchOut: 'क्लच छोड़ो',
+    gear: (g) => ['','पहला','दूसरा','तीसरा','चौथा','पाँचवाँ','छठा'][g] + ' गियर',
+    intro1: 'गियर शिफ्ट ड्रिल तीन से शुरू हो रही है',
+    intro2: 'दो', intro3: 'एक', introGo: 'जाओ',
+    outro: 'ड्रिल पूरी हो गई। शाबाश!',
+    starting: 'शुरू हो रहा है...',
+    complete: 'ड्रिल पूरी हुई',
+    shiftLabel: (i, total, step) => `शिफ्ट ${i}/${total}  ·  ${step}`,
+    ui: {
+      eyebrow: 'मैनुअल ट्रांसमिशन ट्रेनर',
+      includeGears: 'गियर चुनें',
+      settings: 'सेटिंग्स',
+      shifts: 'शिफ्ट',
+      stepPause: 'रुकने का समय (सेकंड)',
+      voiceSpeed: 'आवाज़ की गति',
+      options: 'विकल्प',
+      countdownIntro: 'उलटी गिनती',
+      endMessage: 'अंत संदेश',
+      sequencePreview: 'क्रम झलक',
+      shuffle: 'फेरबदल',
+      startDrill: 'शुरू करें',
+      stopDrill: 'रोकें',
+      clutchInTag: 'क्लच दबाओ',
+      clutchOutTag: 'क्लच छोड़ो',
+    }
+  }
+};
+
+let currentLang = 'en';
+
+function updateUI() {
+  const u = LANG[currentLang].ui;
+  document.querySelector('.eyebrow').textContent = u.eyebrow;
+  document.querySelectorAll('.section-label')[0].textContent = u.includeGears;
+  document.querySelectorAll('.section-label')[1].textContent = u.settings;
+  document.querySelectorAll('.section-label')[2].textContent = u.shifts;
+  document.querySelectorAll('.section-label')[3].textContent = u.stepPause;
+  document.querySelectorAll('.section-label')[4].textContent = u.voiceSpeed;
+  document.querySelectorAll('.section-label')[5].textContent = u.options;
+  document.querySelectorAll('.section-label')[6].textContent = u.sequencePreview;
+  document.querySelector('.check-label:nth-of-type(1)') && (() => {
+    const labels = document.querySelectorAll('.check-label');
+    labels[0].textContent = u.countdownIntro;
+    labels[1].textContent = u.endMessage;
+  })();
+  document.querySelector('[onclick="regeneratePreview()"]').textContent = u.shuffle;
+  if (!drillRunning) {
+    document.getElementById('btn-generate').textContent = u.startDrill;
+  }
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+  document.getElementById('lang-hi').classList.toggle('active', lang === 'hi');
+  updateUI();
+  renderPreview();
+}
+let sequence = [];
+let activeGears = new Set([1,2,3,4,5]);
+let drillRunning = false;
+let drillTimeouts = [];
+
+// Gear toggle buttons
+document.getElementById('gear-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.gear-btn');
+  if (!btn) return;
+  const gear = parseInt(btn.dataset.gear);
+  if (activeGears.has(gear)) {
+    if (activeGears.size <= 2) return; // need at least 2
+    activeGears.delete(gear);
+    btn.classList.remove('active');
+  } else {
+    activeGears.add(gear);
+    btn.classList.add('active');
+  }
+  regeneratePreview();
+});
+
+function buildSequence() {
+  const count = parseInt(document.getElementById('rng-count').value);
+  const pool = [...activeGears].sort((a,b) => a - b);
+  const seq = [];
+  let last = null;
+  for (let i = 0; i < count; i++) {
+    let pick;
+    // Bias toward adjacent gears for realism
+    if (last !== null && Math.random() < 0.65) {
+      const idx = pool.indexOf(last);
+      const candidates = [];
+      if (idx > 0) candidates.push(pool[idx - 1]);
+      if (idx < pool.length - 1) candidates.push(pool[idx + 1]);
+      if (candidates.length) {
+        pick = candidates[Math.floor(Math.random() * candidates.length)];
+      }
+    }
+    if (!pick) {
+      do { pick = pool[Math.floor(Math.random() * pool.length)]; } while (pick === last && pool.length > 1);
+    }
+    seq.push(pick);
+    last = pick;
+  }
+  return seq;
+}
+
+function renderPreview() {
+  const box = document.getElementById('preview');
+  box.innerHTML = '';
+  const show = sequence.slice(0, 5);
+  show.forEach((gear, i) => {
+    if (i > 0) {
+      const arrow = document.createElement('span');
+      arrow.style.cssText = 'color:#2a2040; font-size:10px;';
+      arrow.textContent = '···';
+      box.appendChild(arrow);
+    }
+    const ci = document.createElement('span');
+    ci.className = 'preview-tag tag-clutch-in';
+    ci.textContent = LANG[currentLang].ui.clutchInTag;
+    box.appendChild(ci);
+
+    const g = document.createElement('span');
+    g.className = 'preview-tag tag-gear';
+    g.textContent = currentLang === 'hi' ? LANG.hi.gear(gear).toUpperCase() : (GEAR_NAMES[gear] + ' GEAR');
+    box.appendChild(g);
+
+    const co = document.createElement('span');
+    co.className = 'preview-tag tag-clutch-out';
+    co.textContent = LANG[currentLang].ui.clutchOutTag;
+    box.appendChild(co);
+  });
+  if (sequence.length > 5) {
+    const more = document.createElement('span');
+    more.className = 'preview-more';
+    more.textContent = ` +${sequence.length - 5} more shifts`;
+    box.appendChild(more);
+  }
+}
+
+function regeneratePreview() {
+  sequence = buildSequence();
+  renderPreview();
+  highlightGear(null);
+}
+
+// Range listeners
+document.getElementById('rng-count').addEventListener('input', e => {
+  document.getElementById('val-count').textContent = e.target.value;
+  regeneratePreview();
+});
+document.getElementById('rng-pause').addEventListener('input', e => {
+  document.getElementById('val-pause').textContent = parseFloat(e.target.value).toFixed(1) + 's';
+});
+document.getElementById('rng-speed').addEventListener('input', e => {
+  document.getElementById('val-speed').textContent = parseFloat(e.target.value).toFixed(2) + '×';
+});
+
+// Gear diagram highlight
+function highlightGear(gear) {
+  for (let i = 1; i <= 6; i++) {
+    const el = document.getElementById('gp' + i);
+    if (el) el.classList.toggle('highlight', i === gear);
+  }
+}
+
+// Speech
+function speak(text, rate) {
+  return new Promise(resolve => {
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = rate;
+    utter.volume = 1;
+    utter.onend = resolve;
+    utter.onerror = resolve;
+    window.speechSynthesis.speak(utter);
+  });
+}
+
+function sleep(ms) {
+  return new Promise(resolve => {
+    const t = setTimeout(resolve, ms);
+    drillTimeouts.push(t);
+  });
+}
+
+function stopDrill() {
+  drillRunning = false;
+  window.speechSynthesis.cancel();
+  drillTimeouts.forEach(clearTimeout);
+  drillTimeouts = [];
+  highlightGear(null);
+}
+
+async function runDrill() {
+  if (drillRunning) {
+    stopDrill();
+    const btn = document.getElementById('btn-generate');
+    btn.textContent = LANG[currentLang].ui.startDrill;
+    btn.style.background = '#fff';
+    btn.style.color = '#000';
+    btn.style.border = 'none';
+    document.getElementById('progress-wrap').classList.remove('visible');
+    return;
+  }
+
+  drillRunning = true;
+  const btn = document.getElementById('btn-generate');
+  btn.textContent = LANG[currentLang].ui.stopDrill;
+  btn.style.background = 'transparent';
+  btn.style.color = '#f87171';
+  btn.style.border = '1px solid #f87171';
+
+  const progressWrap = document.getElementById('progress-wrap');
+  const progressBar = document.getElementById('progress-bar');
+  const progressLabel = document.getElementById('progress-label');
+  progressWrap.classList.add('visible');
+
+  const pauseMs = parseFloat(document.getElementById('rng-pause').value) * 1000;
+  const speed = parseFloat(document.getElementById('rng-speed').value);
+  const withIntro = document.getElementById('chk-intro').checked;
+  const withOutro = document.getElementById('chk-outro').checked;
+  const total = sequence.length;
+
+  const L = LANG[currentLang];
+
+  // Intro
+  if (withIntro) {
+    progressLabel.textContent = L.starting;
+    await speak(L.intro1, speed);
+    if (!drillRunning) return;
+    await speak(L.intro2, speed);
+    if (!drillRunning) return;
+    await speak(L.intro3, speed);
+    if (!drillRunning) return;
+    await speak(L.introGo, speed);
+    if (!drillRunning) return;
+  }
+
+  for (let i = 0; i < sequence.length; i++) {
+    if (!drillRunning) break;
+    const gear = sequence[i];
+    const pct = Math.round((i / total) * 100);
+    progressBar.style.width = pct + '%';
+
+    // Step 1: Clutch in
+    progressLabel.textContent = L.shiftLabel(i+1, total, L.ui.clutchInTag);
+    highlightGear(null);
+    await speak(L.clutchIn, speed);
+    if (!drillRunning) break;
+    await sleep(pauseMs);
+    if (!drillRunning) break;
+
+    // Step 2: Gear
+    progressLabel.textContent = L.shiftLabel(i+1, total, L.gear(gear).toUpperCase());
+    highlightGear(gear);
+    await speak(L.gear(gear), speed);
+    if (!drillRunning) break;
+    await sleep(pauseMs);
+    if (!drillRunning) break;
+
+    // Step 3: Clutch out
+    progressLabel.textContent = L.shiftLabel(i+1, total, L.ui.clutchOutTag);
+    highlightGear(null);
+    await speak(L.clutchOut, speed);
+    if (!drillRunning) break;
+    await sleep(pauseMs);
+  }
+
+  if (withOutro && drillRunning) {
+    await speak(L.outro, speed);
+  }
+
+  if (drillRunning) {
+    progressBar.style.width = '100%';
+    progressLabel.textContent = L.complete;
+  }
+
+  drillRunning = false;
+  highlightGear(null);
+  btn.textContent = LANG[currentLang].ui.startDrill;
+  btn.style.background = '#fff';
+  btn.style.color = '#000';
+  btn.style.border = 'none';
+}
+
+// Init
+regeneratePreview();
+</script>
+</body>
+</html>
